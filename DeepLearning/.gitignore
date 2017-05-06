@@ -1,3 +1,6 @@
 *.tar*
 notMNIST_large
 notMNIST_small
+*.pickle
+*.zip
+.ipynb_checkpoints
