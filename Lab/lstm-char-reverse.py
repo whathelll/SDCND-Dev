@@ -43,8 +43,8 @@ def random_string_generator(batch_size=128, chars=5):
 def run_test():
     # http://blog.gaurav.im/2017/01/11/a-gentle-intro-to-recurrent-nns-in-tensorflow/
     tf.reset_default_graph()
-    batch_size = 1
-    sequence_length = 2
+    batch_size = 2
+    sequence_length = 4
     input_size = 26  # no. of chars in onehot
     hidden_size = 256  # no. of hidden units
 
@@ -52,7 +52,6 @@ def run_test():
     tf_y = tf.placeholder(tf.int32, shape=[batch_size, sequence_length], name="y")
     tf_x_oh = tf.cast(tf.one_hot(tf_x, depth=input_size), tf.float32)  # [batch, sequence_length, 26]
     tf_y_oh = tf.cast(tf.one_hot(tf_y, depth=input_size), tf.float32)  # [batch, sequence_length, 26]
-    tf_mode = 'train'
 
     cell = tf.contrib.rnn.BasicLSTMCell(num_units=hidden_size)
     rnn_outputs, state = tf.nn.dynamic_rnn(cell, inputs=tf_x_oh, dtype=tf.float32)
@@ -79,8 +78,8 @@ def run_test():
 
         # returns (finished, (batch_size, input_size), (1, hidden_size))
         def next_inputs(self, time, outputs, state, sample_ids, name=None):
-            time = time+1
-            finished = tf.reduce_all(tf.equal(time, sequence_length))
+            next_time = time+1
+            finished = tf.reduce_all(tf.equal(next_time, sequence_length))
             out = get_logits(outputs)
             out = tf.reshape(out, [batch_size, input_size])
             return finished, out, state # (time, outputs, state, sample_ids) -> (finished, next_inputs, next_state)
@@ -108,7 +107,7 @@ def run_test():
             # logits = tf.matmul(output, Why) + by
         return logits
 
-    logits, predictions = decode(helper)
+    logits, predictions = decode(my_helper)
 
     # inference_logits, inference_predictions = decode(my_helper)
     loss = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=tf_y_oh)
@@ -117,19 +116,15 @@ def run_test():
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        tf_mode = "train"
 
-        for epoch in range(1):
+        for epoch in range(50001):
             randomStringGenerator = random_string_generator(batch_size=batch_size, chars=sequence_length)
             x, y = next(randomStringGenerator)
-            #         print('run {0} --------'.format(epoch))
-
             feed_dict = {tf_x: x, tf_y: y}
             o, l, _ = sess.run([predictions, loss, optimizer], feed_dict=feed_dict)
             # print(o)
 
             if (epoch % 1000 == 0):
-                tf_mode == 'test'
                 print('run {0} --------'.format(epoch))
                 print('target:', y)
                 print('output:', o)
